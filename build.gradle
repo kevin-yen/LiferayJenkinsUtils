@@ -1,0 +1,30 @@
+apply plugin: 'application'
+apply plugin: 'groovy'
+
+repositories {
+	jcenter()
+}
+
+dependencies {
+	compile group: 'commons-cli', name: 'commons-cli', version: '1.3.1'
+	compile group: 'commons-io', name: 'commons-io', version: '2.5'
+
+	compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
+	compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.2'
+	compile group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.5'
+	compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.4.7'
+}
+
+run {
+	mainClassName = 'com.liferay.jenkins.tools.UploadConfigs'
+
+	systemProperty 'username', jenkinsUsername
+	systemProperty 'password', jenkinsPassword
+
+	systemProperty 'org.apache.commons.logging.Log', 'org.apache.commons.logging.impl.SimpleLog'
+	systemProperty 'org.apache.commons.logging.simplelog.showdatetime', 'true'
+	systemProperty 'org.apache.commons.logging.simplelog.log.org.apache.http', 'DEBUG'
+	systemProperty 'org.apache.commons.logging.simplelog.log.org.apache.http.wire', 'ERROR'
+
+	standardInput = System.in
+}
