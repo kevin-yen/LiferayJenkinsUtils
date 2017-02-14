@@ -1,0 +1,226 @@
+<?xml version="1.0"?>
+
+<project>
+	<actions />
+	<description><![CDATA[<a href="/view/test-portal-acceptance-pullrequest(ee-6.2.x)/">More</a>]]></description>
+	<logRotator class="hudson.tasks.LogRotator">
+		<daysToKeep>5</daysToKeep>
+		<numToKeep>-1</numToKeep>
+		<artifactDaysToKeep>5</artifactDaysToKeep>
+		<artifactNumToKeep>-1</artifactNumToKeep>
+	</logRotator>
+	<keepDependencies>false</keepDependencies>
+	<properties>
+		<hudson.model.ParametersDefinitionProperty>
+			<parameterDefinitions>
+				<hudson.model.StringParameterDefinition>
+					<name>GITHUB_ORIGIN_NAME</name>
+					<description></description>
+					<defaultValue></defaultValue>
+				</hudson.model.StringParameterDefinition>
+				<hudson.model.StringParameterDefinition>
+					<name>GITHUB_PULL_REQUEST_NUMBER</name>
+					<description></description>
+					<defaultValue></defaultValue>
+				</hudson.model.StringParameterDefinition>
+				<hudson.model.StringParameterDefinition>
+					<name>GITHUB_RECEIVER_USERNAME</name>
+					<description></description>
+					<defaultValue></defaultValue>
+				</hudson.model.StringParameterDefinition>
+				<hudson.model.StringParameterDefinition>
+					<name>GITHUB_SENDER_BRANCH_NAME</name>
+					<description></description>
+					<defaultValue></defaultValue>
+				</hudson.model.StringParameterDefinition>
+				<hudson.model.StringParameterDefinition>
+					<name>GITHUB_SENDER_BRANCH_SHA</name>
+					<description></description>
+					<defaultValue></defaultValue>
+				</hudson.model.StringParameterDefinition>
+				<hudson.model.StringParameterDefinition>
+					<name>GITHUB_SENDER_USERNAME</name>
+					<description></description>
+					<defaultValue></defaultValue>
+				</hudson.model.StringParameterDefinition>
+				<hudson.model.StringParameterDefinition>
+					<name>GITHUB_UPSTREAM_BRANCH_NAME</name>
+					<description></description>
+					<defaultValue></defaultValue>
+				</hudson.model.StringParameterDefinition>
+				<hudson.model.StringParameterDefinition>
+					<name>GITHUB_UPSTREAM_BRANCH_SHA</name>
+					<description></description>
+					<defaultValue></defaultValue>
+				</hudson.model.StringParameterDefinition>
+				<hudson.model.StringParameterDefinition>
+					<name>JENKINS_GITHUB_BRANCH_NAME</name>
+					<description></description>
+					<defaultValue></defaultValue>
+				</hudson.model.StringParameterDefinition>
+				<hudson.model.StringParameterDefinition>
+					<name>JENKINS_GITHUB_BRANCH_USERNAME</name>
+					<description></description>
+					<defaultValue></defaultValue>
+				</hudson.model.StringParameterDefinition>
+				<hudson.model.StringParameterDefinition>
+					<name>JENKINS_GITHUB_PULL_REQUEST_NUMBER</name>
+					<description></description>
+					<defaultValue></defaultValue>
+				</hudson.model.StringParameterDefinition>
+				<hudson.model.StringParameterDefinition>
+					<name>JENKINS_GITHUB_PULL_REQUEST_USERNAME</name>
+					<description></description>
+					<defaultValue></defaultValue>
+				</hudson.model.StringParameterDefinition>
+				<hudson.model.StringParameterDefinition>
+					<name>JENKINS_JOB_VARIANT</name>
+					<description></description>
+					<defaultValue></defaultValue>
+				</hudson.model.StringParameterDefinition>
+				<hudson.model.StringParameterDefinition>
+					<name>JENKINS_TOP_LEVEL_SHARED_DIR</name>
+					<description></description>
+					<defaultValue></defaultValue>
+				</hudson.model.StringParameterDefinition>
+			</parameterDefinitions>
+		</hudson.model.ParametersDefinitionProperty>
+		<EnvInjectJobProperty plugin="envinject@1.89">
+			<info>
+				<groovyScriptContent><![CDATA[def map = currentBuild.getEnvVars()
+
+map["JENKINS_TEMP_BRANCH"] = "master-temp-" + System.currentTimeMillis()
+
+println(map)
+
+return map]]></groovyScriptContent>
+				<propertiesContent><![CDATA[MASTER_HOSTNAME=test-1-1
+
+TOP_LEVEL_SHARED_DIR=/mnt/mfs-ssd1-10.0.10/jenkins/${MASTER_HOSTNAME}/opt/java/jenkins/userContent/jobs/${JOB_NAME}/builds/${BUILD_NUMBER}]]></propertiesContent>
+				<loadFilesFromMaster>false</loadFilesFromMaster>
+			</info>
+			<on>true</on>
+			<keepJenkinsSystemVariables>true</keepJenkinsSystemVariables>
+			<keepBuildVariables>true</keepBuildVariables>
+			<contributors />
+		</EnvInjectJobProperty>
+	</properties>
+	<scm class="hudson.scm.NullSCM" />
+	<assignedNode>!test-1-1</assignedNode>
+	<canRoam>false</canRoam>
+	<disabled>false</disabled>
+	<blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+	<blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+	<authToken>raen3Aib</authToken>
+	<triggers />
+	<concurrentBuild>true</concurrentBuild>
+	<customWorkspace>/opt/dev/projects/github/liferay-jenkins-ee</customWorkspace>
+	<builders>
+		<hudson.tasks.Shell>
+			<command><![CDATA[#!/bin/bash -e -x
+
+#
+# Update the workspace repository for build steps.
+#
+
+echo "Update the workspace repository for build steps."
+
+curl -o ./jenkins_local_git.sh http://mirrors/github.com/liferay/liferay-jenkins-ee/jenkins_local_git.sh
+
+source ./jenkins_local_git.sh
+
+update_jenkins
+
+if [ -e "${TOP_LEVEL_SHARED_DIR}" ]
+then
+	rm -r ${TOP_LEVEL_SHARED_DIR}
+fi
+
+echo "Exit shell."]]></command>
+		</hudson.tasks.Shell>
+		<hudson.tasks.Shell>
+			<command><![CDATA[#!/bin/bash -e -x
+
+echo "Execute: build-test-portal-acceptance-pullrequest.sh start-current-job"
+
+commands/build-test-portal-acceptance-pullrequest.sh start-current-job
+
+echo "Exit shell."]]></command>
+		</hudson.tasks.Shell>
+		<EnvInjectBuilder plugin="envinject@1.91.2">
+			<info>
+				<propertiesFilePath><![CDATA[${WORKSPACE}/start.properties]]></propertiesFilePath>
+			</info>
+		</EnvInjectBuilder>
+		<hudson.plugins.descriptionsetter.DescriptionSetterBuilder plugin="description-setter@1.10">
+			<regexp>.*</regexp>
+			<description><![CDATA[${BUILD_DESCRIPTION}]]></description>
+		</hudson.plugins.descriptionsetter.DescriptionSetterBuilder>
+		<hudson.tasks.Shell>
+			<command><![CDATA[#!/bin/bash -e -x
+
+echo "Execute: build-test-portal-acceptance-pullrequest.sh"
+
+commands/build-test-portal-acceptance-pullrequest.sh
+
+echo "Exit shell."]]></command>
+		</hudson.tasks.Shell>
+	</builders>
+	<publishers>
+		<org.jenkinsci.plugins.postbuildscript.PostBuildScript plugin="postbuildscript@0.16">
+			<buildSteps>
+				<hudson.tasks.Shell>
+					<command><![CDATA[#!/bin/bash -e -x
+
+#
+# Update the workspace repository for post-build steps.
+#
+
+echo "Update the workspace repository for post-build steps."
+
+git clean -d -f -x
+
+git reset --hard
+
+set +e
+
+git show-ref --verify --quiet refs/heads/${JENKINS_TEMP_BRANCH}; VERIFY_BRANCH_RESULT=$?
+
+set -e
+
+if [[ ${VERIFY_BRANCH_RESULT} == 0 ]]
+then
+	git checkout ${JENKINS_TEMP_BRANCH}
+else
+	git checkout master
+fi
+
+git log -n 1
+
+echo "Exit shell."]]></command>
+				</hudson.tasks.Shell>
+				<hudson.tasks.Shell>
+					<command><![CDATA[#!/bin/bash -e -x
+
+echo "Execute: build-test-portal-acceptance-pullrequest.sh stop-current-job"
+
+commands/build-test-portal-acceptance-pullrequest.sh stop-current-job
+
+echo "Exit shell."]]></command>
+				</hudson.tasks.Shell>
+				<EnvInjectBuilder plugin="envinject@1.91.2">
+					<info>
+						<propertiesFilePath><![CDATA[${WORKSPACE}/stop.properties]]></propertiesFilePath>
+					</info>
+				</EnvInjectBuilder>
+				<hudson.plugins.descriptionsetter.DescriptionSetterBuilder plugin="description-setter@1.10">
+					<regexp>.*</regexp>
+					<description><![CDATA[${BUILD_DESCRIPTION}]]></description>
+				</hudson.plugins.descriptionsetter.DescriptionSetterBuilder>
+			</buildSteps>
+			<scriptOnlyIfSuccess>false</scriptOnlyIfSuccess>
+			<scriptOnlyIfFailure>false</scriptOnlyIfFailure>
+		</org.jenkinsci.plugins.postbuildscript.PostBuildScript>
+	</publishers>
+	<buildWrappers />
+</project>
