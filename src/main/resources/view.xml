@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hudson.model.ListView>
+    <filterExecutors>true</filterExecutors>
+    <filterQueue>true</filterQueue>
+    <properties class="hudson.model.View$PropertyList"/>
+    <jobNames />
+    <jobFilters/>
+    <columns>
+        <hudson.views.StatusColumn/>
+        <hudson.views.WeatherColumn/>
+        <hudson.views.JobColumn/>
+        <jenkins.plugins.extracolumns.DescriptionColumn plugin="extra-columns@1.11">
+            <displayName>false</displayName>
+            <trim>false</trim>
+            <displayLength>1</displayLength>
+        </jenkins.plugins.extracolumns.DescriptionColumn>
+        <hudson.views.LastSuccessColumn/>
+        <hudson.views.LastFailureColumn/>
+        <hudson.views.LastDurationColumn/>
+        <hudson.views.BuildButtonColumn/>
+    </columns>
+    <recurse>false</recurse>
+</hudson.model.ListView>
