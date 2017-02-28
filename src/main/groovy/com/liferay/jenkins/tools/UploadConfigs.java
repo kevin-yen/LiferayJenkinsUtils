@@ -12,7 +12,10 @@ import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
 
@@ -27,10 +30,6 @@ import java.util.stream.Collectors;
 public class UploadConfigs {
 
 	public static void main(String[] args) throws Exception {
-		File jenkinsDirectory = new File("/opt/dev/projects/github/liferay-jenkins-ee");
-
-		File mastersDirectory = new File(jenkinsDirectory, "masters");
-
 		CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
 
 		Credentials credentials = new UsernamePasswordCredentials(System.getProperty("username"), System.getProperty("password"));
@@ -48,12 +47,49 @@ public class UploadConfigs {
 
 		RestService restService = new RestService(httpClient, credentialsProvider);
 
+		File jenkinsDirectory = new File("/opt/dev/projects/github/liferay-jenkins-ee");
+
+		String masters;
+		String jobs;
+		boolean delete;
+
+		if (System.getProperty("masters") != null) {
+			masters = System.getProperty("masters");
+		}
+		else {
+			masters = "test-4-1";
+		}
+
+		if (System.getProperty("jobs") != null) {
+			jobs = System.getProperty("jobs");
+		}
+		else {
+			jobs = "";
+		}
+
+		if (System.getProperty("delete") != null) {
+			delete = Boolean.parseBoolean(System.getProperty("delete"));
+		}
+		else {
+			delete = false;
+		}
+
+		update(restService, jenkinsDirectory, masters, jobs, delete);
+	}
+
+	public static void update(RestService restService, File jenkinsDirectory, String mastersString, String jobsString, boolean deleteUnused)
+			throws IOException, URISyntaxException, ParserConfigurationException, TransformerException, SAXException, UnableToReadConfigException {
+
+		File mastersDirectory = new File(jenkinsDirectory, "masters");
+
 		List<JobConfig> jobConfigs = new ArrayList<>();
 
 		List<File> masterDirectories = getDirectories(mastersDirectory);
 
+		List<String> masters = Arrays.asList(mastersString.split(","));
+
 		masterDirectories = masterDirectories.stream()
-				.filter(file -> file.getName().startsWith("test-4"))
+				.filter(file -> masters.contains(file.getName()))
 				.collect(Collectors.toList());
 
 		for (File masterDirectory : masterDirectories) {
@@ -65,7 +101,17 @@ public class UploadConfigs {
 
 			File jobsDirectory = new File(masterDirectory, "jobs");
 
-			for (File jobDirectory : getDirectories(jobsDirectory)) {
+			List<File> jobsDirectories = getDirectories(jobsDirectory);
+
+			if(!jobConfigs.isEmpty()) {
+				List<String> jobs = Arrays.asList(jobsString.split(","));
+
+				jobsDirectories = jobsDirectories.stream()
+						.filter(file -> containsSubstring(jobs, file.getName()))
+						.collect(Collectors.toList());
+			}
+
+			for (File jobDirectory : jobsDirectories) {
 				String jobName = jobDirectory.getName();
 
 				File configFile = new File(jobDirectory, "config.xml");
@@ -83,16 +129,18 @@ public class UploadConfigs {
 			jobConfigs.addAll(masterJobConfigs);
 		}
 
-		List<JobConfig> unusedJobConfigs = jobConfigs.stream()
-				.filter(jobConfig -> !jobConfig.hasLocalConfigFile())
-				.collect(Collectors.toList());
+		if (deleteUnused) {
+			List<JobConfig> unusedJobConfigs = jobConfigs.stream()
+					.filter(jobConfig -> !jobConfig.hasLocalConfigFile())
+					.collect(Collectors.toList());
 
-		System.out.println("To be delete: ");
+			System.out.println("To be delete: ");
 
-		for (JobConfig jobConfig : unusedJobConfigs) {
-			System.out.println(jobConfig.getJenkinsURL().toString() + " " + jobConfig.getName());
+			for (JobConfig jobConfig : unusedJobConfigs) {
+				System.out.println(jobConfig.getJenkinsURL().toString() + " " + jobConfig.getName());
 
-			jobConfig.delete(restService);
+				jobConfig.delete(restService);
+			}
 		}
 
 		List<JobConfig> existingJobConfigs = jobConfigs.stream()
@@ -121,6 +169,8 @@ public class UploadConfigs {
 			jobConfig.create(restService);
 		}
 
+		existingJobConfigs.addAll(newJobConfigs);
+
 		for (File masterDirectory : masterDirectories) {
 			String master = masterDirectory.getName();
 
@@ -141,7 +191,7 @@ public class UploadConfigs {
 
 		List<Pattern> topLevelJobPatterns = getTopLevelTemplatePatterns(topLevelTemplateNames);
 
-		List<JobConfig> topLevelJobConfigs = jobConfigs.stream()
+		List<JobConfig> topLevelJobConfigs = existingJobConfigs.stream()
 				.filter(jobConfig -> matchesPatterns(topLevelJobPatterns, jobConfig.getName()))
 				.collect(Collectors.toList());
 
@@ -160,7 +210,7 @@ public class UploadConfigs {
 
 				List<JobConfig> downstreamJobConfigs = new ArrayList<>();
 
-				for (JobConfig jobConfig : jobConfigs) {
+				for (JobConfig jobConfig : existingJobConfigs) {
 					if (downstreamJobPattern.matcher(jobConfig.getName()).matches()) {
 						downstreamJobConfigs.add(jobConfig);
 					}
@@ -263,6 +313,16 @@ public class UploadConfigs {
 	public static boolean matchesPatterns(List<Pattern> patterns, String string) {
 		for (Pattern pattern : patterns) {
 			if (pattern.matcher(string).matches()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public static boolean containsSubstring(List<String> list, String substring) {
+		for (String string : list) {
+			if (string.contains(substring)) {
 				return true;
 			}
 		}

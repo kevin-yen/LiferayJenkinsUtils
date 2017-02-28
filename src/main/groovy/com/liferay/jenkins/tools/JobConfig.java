@@ -3,16 +3,12 @@ package com.liferay.jenkins.tools;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +49,7 @@ public class JobConfig extends Config {
         return jobNames;
     }
 
-    public void upload(RestService restService) throws IOException, URISyntaxException, ParserConfigurationException, TransformerException, SAXException {
+    public void upload(RestService restService) throws UnableToReadConfigException, IOException, URISyntaxException {
         List<String> existingJobNames = getExistingJobNames(restService, jenkinsURL);
 
         if (existingJobNames.contains(name)) {
@@ -64,11 +60,11 @@ public class JobConfig extends Config {
         }
     }
 
-    public void create(RestService restService) throws IOException, URISyntaxException, TransformerException, SAXException, ParserConfigurationException {
+    public void create(RestService restService) throws UnableToReadConfigException, IOException, URISyntaxException {
         restService.postString(new URL(jenkinsURL, "/createItem?name=" + name), getXML());
     }
 
-    public void update(RestService restService) throws IOException, URISyntaxException, TransformerException, SAXException, ParserConfigurationException {
+    public void update(RestService restService) throws UnableToReadConfigException, IOException, URISyntaxException {
         restService.postString(new URL(jenkinsURL, "/job/" + name + "/config.xml"), getXML());
     }
 
@@ -100,7 +96,14 @@ public class JobConfig extends Config {
     protected boolean exists;
 
     @Override
-    public String getXML() throws ParserConfigurationException, IOException, SAXException, TransformerException {
-        return FileUtils.readFileToString(localConfigFile, Charset.defaultCharset());
+    public String getXML() throws UnableToReadConfigException {
+        try {
+            return FileUtils.readFileToString(localConfigFile, Charset.defaultCharset());
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+
+            throw new UnableToReadConfigException(e);
+        }
     }
 }

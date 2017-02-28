@@ -11,6 +11,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -25,7 +26,7 @@ import java.util.List;
 
 public class ViewConfig extends Config {
 
-    public ViewConfig(URL jenkinsURL, String name, File template, List<JobConfig> jobConfigs) throws ParserConfigurationException, TransformerException, SAXException, IOException {
+    public ViewConfig(URL jenkinsURL, String name, File template, List<JobConfig> jobConfigs) throws UnableToReadConfigException {
         this.jenkinsURL = jenkinsURL;
         this.name = name;
         this.template = template;
@@ -76,47 +77,75 @@ public class ViewConfig extends Config {
     }
 
     @Override
-    public String getXML() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public String getXML() throws UnableToReadConfigException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 
         factory.setValidating(false);
         factory.setIgnoringElementContentWhitespace(true);
 
-        DocumentBuilder builder = factory.newDocumentBuilder();
+        try {
+            DocumentBuilder builder = factory.newDocumentBuilder();
 
-        Document document = builder.parse(template);
+            Document document = builder.parse(template);
 
-        Element rootElement = document.getDocumentElement();
+            Element rootElement = document.getDocumentElement();
 
-        Element nameElement = document.createElement("name");
+            Element nameElement = document.createElement("name");
 
-        nameElement.setTextContent(name);
+            nameElement.setTextContent(name);
 
-        rootElement.appendChild(nameElement);
+            rootElement.appendChild(nameElement);
 
-        NodeList nodeList = rootElement.getElementsByTagName("jobNames");
+            NodeList nodeList = rootElement.getElementsByTagName("jobNames");
 
-        Element jobNamesElement = (Element) nodeList.item(0);
+            Element jobNamesElement = (Element) nodeList.item(0);
 
-        for (JobConfig jobConfig : jobConfigs) {
-            Element jobElement = document.createElement("string");
+            for (JobConfig jobConfig : jobConfigs) {
+                Element jobElement = document.createElement("string");
 
-            jobElement.setTextContent(jobConfig.getName());
+                jobElement.setTextContent(jobConfig.getName());
 
-            jobNamesElement.appendChild(jobElement);
+                jobNamesElement.appendChild(jobElement);
+            }
+
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            DOMSource source = new DOMSource(document);
+
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+            StreamResult result = new StreamResult(byteArrayOutputStream);
+
+            transformer.transform(source, result);
+
+            return byteArrayOutputStream.toString();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+
+            throw new UnableToReadConfigException(e);
+        }
+        catch (TransformerConfigurationException e) {
+            e.printStackTrace();
+
+            throw new UnableToReadConfigException(e);
+        }
+        catch (ParserConfigurationException e) {
+            e.printStackTrace();
+
+            throw new UnableToReadConfigException(e);
+        }
+        catch (SAXException e) {
+            e.printStackTrace();
+
+            throw new UnableToReadConfigException(e);
+        }
+        catch (TransformerException e) {
+            e.printStackTrace();
+
+            throw new UnableToReadConfigException(e);
         }
 
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
-        DOMSource source = new DOMSource(document);
-
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
-        StreamResult result = new StreamResult(byteArrayOutputStream);
-
-        transformer.transform(source, result);
-
-        return byteArrayOutputStream.toString();
     }
 
     protected String xml;

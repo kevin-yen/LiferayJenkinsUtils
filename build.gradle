@@ -12,19 +12,34 @@ dependencies {
 	compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
 	compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.2'
 	compile group: 'org.apache.httpcomponents', name: 'httpcore', version: '4.4.5'
+
 	compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.4.7'
+
+	compile group: 'org.json', name: 'json', version: '20160810'
 }
 
 run {
 	mainClassName = 'com.liferay.jenkins.tools.UploadConfigs'
 
+	if (project.hasProperty('masters')) {
+		systemProperty 'masters', project.property('masters')
+	}
+
+	if (project.hasProperty('jobs')) {
+		systemProperty 'jobs', project.property('jobs')
+	}
+
+	if (project.hasProperty('delete')) {
+		systemProperty 'delete', project.property('delete')
+	}
+
 	systemProperty 'username', jenkinsUsername
 	systemProperty 'password', jenkinsPassword
 
-	systemProperty 'org.apache.commons.logging.Log', 'org.apache.commons.logging.impl.SimpleLog'
-	systemProperty 'org.apache.commons.logging.simplelog.showdatetime', 'true'
-	systemProperty 'org.apache.commons.logging.simplelog.log.org.apache.http', 'DEBUG'
-	systemProperty 'org.apache.commons.logging.simplelog.log.org.apache.http.wire', 'ERROR'
+//    systemProperty 'org.apache.commons.logging.Log', 'org.apache.commons.logging.impl.SimpleLog'
+//    systemProperty 'org.apache.commons.logging.simplelog.showdatetime', 'true'
+//    systemProperty 'org.apache.commons.logging.simplelog.log.org.apache.http', 'DEBUG'
+//    systemProperty 'org.apache.commons.logging.simplelog.log.org.apache.http.wire', 'ERROR'
 
 	standardInput = System.in
 }
