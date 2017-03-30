@@ -92,6 +92,8 @@ public class UploadConfigs {
 				.filter(file -> masters.contains(file.getName()))
 				.collect(Collectors.toList());
 
+		List<String> jobs = Arrays.asList(jobsString.split(","));
+
 		for (File masterDirectory : masterDirectories) {
 			String master = masterDirectory.getName();
 
@@ -103,9 +105,7 @@ public class UploadConfigs {
 
 			List<File> jobsDirectories = getDirectories(jobsDirectory);
 
-			if(!jobConfigs.isEmpty()) {
-				List<String> jobs = Arrays.asList(jobsString.split(","));
-
+			if(!jobs.isEmpty()) {
 				jobsDirectories = jobsDirectories.stream()
 						.filter(file -> containsSubstring(jobs, file.getName()))
 						.collect(Collectors.toList());
@@ -169,78 +169,78 @@ public class UploadConfigs {
 			jobConfig.create(restService);
 		}
 
-		existingJobConfigs.addAll(newJobConfigs);
+		// existingJobConfigs.addAll(newJobConfigs);
 
-		for (File masterDirectory : masterDirectories) {
-			String master = masterDirectory.getName();
+		// for (File masterDirectory : masterDirectories) {
+		// 	String master = masterDirectory.getName();
 
-			URL jenkinsURL = new URL("http://" + master);
+		// 	URL jenkinsURL = new URL("http://" + master);
 
-			List<String> existingViewNames = ViewConfig.getExistingViewNames(restService, jenkinsURL);
+		// 	List<String> existingViewNames = ViewConfig.getExistingViewNames(restService, jenkinsURL);
 
-			for (String existingViewName : existingViewNames) {
-				if (!existingViewName.equals("Top Level")) {
-					restService.post(new URL(jenkinsURL, "/view/" + URLEncoder.encode(existingViewName, "UTF-8").replace("+", "%20") + "/doDelete"), null);
-				}
-			}
-		}
+		// 	for (String existingViewName : existingViewNames) {
+		// 		if (!existingViewName.equals("Top Level")) {
+		// 			restService.post(new URL(jenkinsURL, "/view/" + URLEncoder.encode(existingViewName, "UTF-8").replace("+", "%20") + "/doDelete"), null);
+		// 		}
+		// 	}
+		// }
 
-		List<ViewConfig> views = new ArrayList<>();
+		// List<ViewConfig> views = new ArrayList<>();
 
-		List<String> topLevelTemplateNames = getTopLevelTemplateNames(jenkinsDirectory);
+		// List<String> topLevelTemplateNames = getTopLevelTemplateNames(jenkinsDirectory);
 
-		List<Pattern> topLevelJobPatterns = getTopLevelTemplatePatterns(topLevelTemplateNames);
+		// List<Pattern> topLevelJobPatterns = getTopLevelTemplatePatterns(topLevelTemplateNames);
 
-		List<JobConfig> topLevelJobConfigs = existingJobConfigs.stream()
-				.filter(jobConfig -> matchesPatterns(topLevelJobPatterns, jobConfig.getName()))
-				.collect(Collectors.toList());
+		// List<JobConfig> topLevelJobConfigs = existingJobConfigs.stream()
+		// 		.filter(jobConfig -> matchesPatterns(topLevelJobPatterns, jobConfig.getName()))
+		// 		.collect(Collectors.toList());
 
-		Pattern branchedJobPattern = Pattern.compile("(.+)(\\(.+\\))");
+		// Pattern branchedJobPattern = Pattern.compile("(.+)(\\(.+\\))");
 
-		Map<JobConfig, List<JobConfig>> groupedJobConfigMap = new HashMap<>();
+		// Map<JobConfig, List<JobConfig>> groupedJobConfigMap = new HashMap<>();
 
-		for (JobConfig topLevelJobConfig : topLevelJobConfigs) {
-			Matcher branchedJobMatcher = branchedJobPattern.matcher(topLevelJobConfig.getName());
+		// for (JobConfig topLevelJobConfig : topLevelJobConfigs) {
+		// 	Matcher branchedJobMatcher = branchedJobPattern.matcher(topLevelJobConfig.getName());
 
-			if (branchedJobMatcher.find()) {
-				String rootName = branchedJobMatcher.group(1);
-				String branch = branchedJobMatcher.group(2);
+		// 	if (branchedJobMatcher.find()) {
+		// 		String rootName = branchedJobMatcher.group(1);
+		// 		String branch = branchedJobMatcher.group(2);
 
-				Pattern downstreamJobPattern = Pattern.compile(Pattern.quote(rootName) + ".*" + Pattern.quote(branch));
+		// 		Pattern downstreamJobPattern = Pattern.compile(Pattern.quote(rootName) + ".*" + Pattern.quote(branch));
 
-				List<JobConfig> downstreamJobConfigs = new ArrayList<>();
+		// 		List<JobConfig> downstreamJobConfigs = new ArrayList<>();
 
-				for (JobConfig jobConfig : existingJobConfigs) {
-					if (downstreamJobPattern.matcher(jobConfig.getName()).matches()) {
-						downstreamJobConfigs.add(jobConfig);
-					}
-				}
+		// 		for (JobConfig jobConfig : existingJobConfigs) {
+		// 			if (downstreamJobPattern.matcher(jobConfig.getName()).matches()) {
+		// 				downstreamJobConfigs.add(jobConfig);
+		// 			}
+		// 		}
 
-				groupedJobConfigMap.put(topLevelJobConfig, downstreamJobConfigs);
-			}
-		}
+		// 		groupedJobConfigMap.put(topLevelJobConfig, downstreamJobConfigs);
+		// 	}
+		// }
 
-		List<ViewConfig> topLevelViewConfigs = new ArrayList<>();
+		// List<ViewConfig> topLevelViewConfigs = new ArrayList<>();
 
-		for (File masterDirectory : masterDirectories) {
-			String master = masterDirectory.getName();
+		// for (File masterDirectory : masterDirectories) {
+		// 	String master = masterDirectory.getName();
 
-			URL jenkinsURL = new URL("http://" + master);
+		// 	URL jenkinsURL = new URL("http://" + master);
 
-			topLevelViewConfigs.add(new ViewConfig(jenkinsURL, "Top%20Level", new File("build/resources/main/view.xml"), topLevelJobConfigs));
-		}
+		// 	topLevelViewConfigs.add(new ViewConfig(jenkinsURL, "Top%20Level", new File("build/resources/main/view.xml"), topLevelJobConfigs));
+		// }
 
-		for (ViewConfig viewConfig : topLevelViewConfigs) {
-			viewConfig.update(restService);
-		}
+		// for (ViewConfig viewConfig : topLevelViewConfigs) {
+		// 	viewConfig.update(restService);
+		// }
 
-		for (JobConfig topLevelJobConfig : groupedJobConfigMap.keySet()) {
-			views.add(new ViewConfig(topLevelJobConfig.getJenkinsURL(), topLevelJobConfig.getName(), new File("build/resources/main/view.xml"), groupedJobConfigMap.get(topLevelJobConfig)));
-		}
+		// for (JobConfig topLevelJobConfig : groupedJobConfigMap.keySet()) {
+		// 	views.add(new ViewConfig(topLevelJobConfig.getJenkinsURL(), topLevelJobConfig.getName(), new File("build/resources/main/view.xml"), groupedJobConfigMap.get(topLevelJobConfig)));
+		// }
 
-		for (ViewConfig viewConfig : views) {
-			viewConfig.upload(restService);
-		}
+		// for (ViewConfig viewConfig : views) {
+		// 	viewConfig.upload(restService);
+		// }
 	}
 
 	public static JobConfig getJobConfig(Collection<JobConfig> jobConfigs, String master, String name) {
